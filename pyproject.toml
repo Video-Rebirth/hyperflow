@@ -1,0 +1,67 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hyperflow-h3"
+version = "1.0.0"
+description = "HyperFlow, Video Rebirth's 8-step LoRA for MiniMax-H3, on top of the official diffusers Modular Pipeline, with optional NVIDIA Sol-Attn."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
+requires-python = ">=3.10"
+authors = [{ name = "Video Rebirth" }]
+keywords = ["diffusers", "minimax-h3", "lora", "video-generation", "flow-matching", "distillation", "self-distillation"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+  # First release with the MiniMax-H3 Modular Pipeline and its context parallel plan.
+  "diffusers>=0.40.0",
+  # Qwen3-VL conditioner (`load_components` needs it; diffusers does not depend on transformers).
+  "transformers>=4.57",
+  "peft",
+  "safetensors",
+  "huggingface_hub",
+  "torch",
+]
+
+[project.optional-dependencies]
+# The example scripts encode the output video with PyAV (`diffusers.utils.export_utils.encode_video`).
+examples = ["av"]
+# NVIDIA Sol-Attn is installed from source; see README "Sol-Attn" for the exact command.
+sol = []
+dev = ["pytest>=8", "ruff>=0.6", "numpy"]
+
+[project.scripts]
+hyperflow-h3-fl2va = "hyperflow_h3.examples.generate_fl2va:main"
+hyperflow-h3-ref2va = "hyperflow_h3.examples.generate_ref2va:main"
+
+[project.urls]
+Homepage = "https://github.com/Video-Rebirth/hyperflow"
+Weights = "https://huggingface.co/videorebirth/hyperflow"
+Issues = "https://github.com/Video-Rebirth/hyperflow/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 119
+target-version = "py310"
+# ruff >= 0.16 formats fenced Python in Markdown; the README aligns its snippets by hand.
+extend-exclude = ["*.md"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::UserWarning"]

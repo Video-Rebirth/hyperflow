@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Generated media / weights (never commit these; weights live on the Hub)
+*.safetensors
+*.mp4
+*.wav
+outputs/
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/
