@@ -8,7 +8,7 @@ conditioner and workflows (`t2va`, `fl2va`, `ref2va`, all video + audio) stay th
 released, on Hugging Face at [huggingface.co/videorebirth/hyperflow](https://huggingface.co/videorebirth/hyperflow);
 this repository holds the loader and the example scripts.
 
-**Showcase.** See [HyperFlow generated video examples and comparisons](https://videorebirth.com/lp/hyperflow).
+**Showcase.** See [HyperFlow generated video examples and comparisons](https://www.videorebirth.com/lp/hyperflow).
 
 | | |
 |---|---|
