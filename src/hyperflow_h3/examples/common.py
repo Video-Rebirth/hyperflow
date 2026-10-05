@@ -268,6 +268,16 @@ class SplitPipeline:
         # text encoding. The offload hook sees the model already on its device and leaves it there.
         getattr(self.rest, self.transformer_name).to(self.device)
 
+    def _warm_vaes(self) -> None:
+        # The VAEs are driven through `.encode`/`.decode`, which do not fire the ComponentsManager's forward-hook
+        # offload, so they are never placed on the GPU by it: a ref2va decode then runs 54-66 s per call on the CPU
+        # with the GPUs idle. Place them here, next to the DiT, so they are resident before the VAE encoder and the
+        # decoders run.
+        for component_name in ("vae", "audio_vae"):
+            component = getattr(self.rest, component_name, None)
+            if component is not None:
+                component.to(self.device)
+
     def _reload_conditioner(self) -> None:
         if self._conditioner_factory is None:
             raise RuntimeError("rank 0 has no conditioner factory; the split pipeline cannot encode another prompt")
@@ -302,9 +312,11 @@ class SplitPipeline:
                 torch.cuda.memory_allocated() / 2**30,
             )
             self._warm_transformer()
+            self._warm_vaes()
             box[0] = state
         else:
             self._warm_transformer()
+            self._warm_vaes()
         dist.broadcast_object_list(box, src=0)
         state = box[0]
         state.values = _unpack_on(state.values, self.device)
@@ -440,6 +452,14 @@ def build_pipeline(args: argparse.Namespace, *, workflow: str):
         # (free - margin) fit it; the margin therefore decides whether the 62 GB text encoder or the 10 GB VAE
         # leaves when the 62 GB DiT arrives, i.e. how much room the denoiser has for activations.
         manager.enable_auto_cpu_offload(device=args.device, memory_reserve_margin=args.memory_reserve_margin)
+
+    # The VAEs are driven through `.encode`/`.decode`, which do not fire the ComponentsManager's
+    # forward-hook offload, so they would otherwise stay on the CPU: a ref2va decode then runs 54-66 s
+    # with the GPUs idle. Place them on the run device, as `_warm_transformer` does for the DiT.
+    for _component_name in ("vae", "audio_vae"):
+        _component = getattr(pipe, _component_name, None)
+        if _component is not None:
+            _component.to(args.device)
 
     if world_size > 1:
         return SplitPipeline(
